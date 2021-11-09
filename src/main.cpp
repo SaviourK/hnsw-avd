@@ -2,8 +2,6 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <math.h>
-#include <string>
 #include <algorithm>
 #include <cmath>
 using namespace std;
@@ -31,11 +29,11 @@ int main(void)
 }
 
 
-void brute_force(float* data, float* query, std::vector<int>& result, size_t dim, uint32_t k, size_t node_count)
+void brute_force(float* data, float* query, vector<int>& result, size_t dim, uint32_t k, size_t node_count)
 {
     float diff = 0;
     int qI = 0;
-    std::vector<DiffPos> diffs;
+    vector<DiffPos> diffs;
     int size = 0;
     bool sorted = false;
     for (int i = 0; i < node_count * dim; i++) {
@@ -46,17 +44,17 @@ void brute_force(float* data, float* query, std::vector<int>& result, size_t dim
             if (size < k) {
                 diffs.push_back(DiffPos(diff, size));
             } else if (size == k) {
-                std::sort(diffs.begin(), diffs.end());
+                sort(diffs.begin(), diffs.end());
                 sorted = true;
                 if (diffs.back().diff > diff) {
                     diffs.back() = DiffPos(diff, size);
-                    std::sort(diffs.begin(), diffs.end());
+                    sort(diffs.begin(), diffs.end());
                 }
             }
             else {
                 if (diffs.back().diff > diff) {
                     diffs.back() = DiffPos(diff, size);
-                    std::sort(diffs.begin(), diffs.end());
+                    sort(diffs.begin(), diffs.end());
                 }
             }
             size++;
@@ -66,7 +64,7 @@ void brute_force(float* data, float* query, std::vector<int>& result, size_t dim
     }
 
     if (!sorted) {
-        std::sort(diffs.begin(), diffs.end());
+        sort(diffs.begin(), diffs.end());
     }
 
 
@@ -80,13 +78,13 @@ void sift_test() {
     //vectors count
     size_t node_count = 1000000;
     //query count
-    size_t qsize = 100;
+    size_t qsize = 10;
     //vector dimension
     size_t vecdim = 128;
     //answers count for 1 query
     size_t answer_size = 100;
     //numberr of nearest neigbors to find
-    uint32_t k = 100;
+    uint32_t k = 10;
     
    
     /////////////////////////////////////////////////////// READ DATA
@@ -108,7 +106,6 @@ void sift_test() {
     inputQA.read((char*)massQA, qsize * answer_size * sizeof(int));
     inputQA.close();
 
-
     /////////////////////////////////////////////////////// QUERY PART
     std::cout << "Start querying\n";
     std::vector<std::pair<float, float>> precision_time;  
@@ -122,10 +119,14 @@ void sift_test() {
 #endif
         std::vector<int> result;
         auto start = std::chrono::steady_clock::now();
+
+        int plus = 0;
         for (int i = 0; i < qsize; i++)
         {
             brute_force(mass, &massQ[i * vecdim], result, vecdim, k, node_count);
-            cout << "QA " << massQA[i] << " \n";
+            cout << "QA " << massQA[i + plus] << " \n";
+            plus += 99;
+
         }
         auto end = std::chrono::steady_clock::now();
         int time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
