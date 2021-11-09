@@ -6,19 +6,6 @@
 #include <cmath>
 using namespace std;
 
-class DiffPos {
-public:
-    float diff;
-    int pos;
-    bool operator< (const DiffPos& other) const {
-        return diff < other.diff;
-    }
-    DiffPos(float diff, int pos) {
-        this->diff = diff;
-        this->pos = pos;
-    }
-};
-
 void sift_test();
 
 int main(void)
@@ -33,27 +20,30 @@ void brute_force(float* data, float* query, vector<int>& result, size_t dim, uin
 {
     float diff = 0;
     int qI = 0;
-    vector<DiffPos> diffs;
+    vector<pair<float, int>> diffs;
     int size = 0;
     bool sorted = false;
     for (int i = 0; i < node_count * dim; i++) {
-        diff += (data[i] - query[qI]) * (data[i] - query[qI]);
+        float tmp = data[i] - query[qI];
+        diff += (tmp) * (tmp);
         qI++;
         if (qI == dim) {
             diff = sqrtf(diff);
-            if (size < k) {
-                diffs.push_back(DiffPos(diff, size));
-            } else if (size == k) {
-                sort(diffs.begin(), diffs.end());
-                sorted = true;
-                if (diffs.back().diff > diff) {
-                    diffs.back() = DiffPos(diff, size);
-                    sort(diffs.begin(), diffs.end());
+            if (!sorted) {
+                if (size < k) {
+                    diffs.push_back(make_pair(diff, size));
                 }
-            }
-            else {
-                if (diffs.back().diff > diff) {
-                    diffs.back() = DiffPos(diff, size);
+                else if (size == k) {
+                    sort(diffs.begin(), diffs.end());
+                    sorted = true;
+                    if (diffs.back().first > diff) {
+                        diffs.back() = make_pair(diff, size);
+                        sort(diffs.begin(), diffs.end());
+                    }
+                }
+            } else {
+                if (diffs.back().first > diff) {
+                    diffs.back() = make_pair(diff, size);
                     sort(diffs.begin(), diffs.end());
                 }
             }
@@ -67,10 +57,9 @@ void brute_force(float* data, float* query, vector<int>& result, size_t dim, uin
         sort(diffs.begin(), diffs.end());
     }
 
-
     for (int i = 0; i < k; i++) {
-        cout << size << " " << i << " position: " << diffs[i].pos << " diff: " << diffs[i].diff << "\n";
-        result.push_back(diffs[i].pos);
+        cout << "K: " << i << " position: " << diffs[i].second << " diff: " << diffs[i].first << "\n";
+        result.push_back(diffs[i].second);
     }
 }
 
@@ -89,26 +78,26 @@ void sift_test() {
    
     /////////////////////////////////////////////////////// READ DATA
     float* mass = new float[node_count * vecdim];
-    std::ifstream input("c:/All/VSB/2rocnik/AVD/sift1M/sift1M.bin", std::ios::binary);
-    if (!input.is_open()) std::runtime_error("Input data file not opened!");
+    ifstream input("c:/All/VSB/2rocnik/AVD/sift1M/sift1M.bin", ios::binary);
+    if (!input.is_open()) runtime_error("Input data file not opened!");
     input.read((char*)mass, node_count * vecdim * sizeof(float));
     input.close();
 
     float* massQ = new float[qsize * vecdim];
-    std::ifstream inputQ("c:/All/VSB/2rocnik/AVD/sift1M/siftQ1M.bin", std::ios::binary);
-    if (!input.is_open()) std::runtime_error("Input query file not opened!");
+    ifstream inputQ("c:/All/VSB/2rocnik/AVD/sift1M/siftQ1M.bin", ios::binary);
+    if (!input.is_open()) runtime_error("Input query file not opened!");
     inputQ.read((char*)massQ, qsize * vecdim * sizeof(float));
     inputQ.close();
 
     unsigned int* massQA = new unsigned int[qsize * answer_size];
-    std::ifstream inputQA("c:/All/VSB/2rocnik/AVD/sift1M/knnQA1M.bin", std::ios::binary);
-    if (!input.is_open()) std::runtime_error("Input result file not opened!");
+    ifstream inputQA("c:/All/VSB/2rocnik/AVD/sift1M/knnQA1M.bin", ios::binary);
+    if (!input.is_open()) runtime_error("Input result file not opened!");
     inputQA.read((char*)massQA, qsize * answer_size * sizeof(int));
     inputQA.close();
 
     /////////////////////////////////////////////////////// QUERY PART
-    std::cout << "Start querying\n";
-    std::vector<std::pair<float, float>> precision_time;  
+    cout << "Start querying\n";
+    vector<pair<float, float>> precision_time;  
 
     int sum = 0;
     int min_time;
@@ -117,8 +106,8 @@ void sift_test() {
 #ifdef COLLECT_STAT
         hnsw.stat_.clear();
 #endif
-        std::vector<int> result;
-        auto start = std::chrono::steady_clock::now();
+        vector<int> result;
+        auto start = chrono::steady_clock::now();
 
         int plus = 0;
         for (int i = 0; i < qsize; i++)
@@ -128,14 +117,14 @@ void sift_test() {
             plus += 99;
 
         }
-        auto end = std::chrono::steady_clock::now();
-        int time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        auto end = chrono::steady_clock::now();
+        int time = chrono::duration_cast<chrono::microseconds>(end - start).count();
         sum += time;
-        min_time = i == 0 ? time : std::min(min_time, time);
+        min_time = i == 0 ? time : min(min_time, time);
 
         result.clear();
     }
-    std::cout << "avg: " << (float)sum / (qsize * 3) << " [us]; " << "min: " << min_time / qsize<< " [us]; \n";
+    cout << "avg: " << (float)sum / (qsize * 3) << " [us]; " << "min: " << min_time / qsize<< " [us]; \n";
     
 
 
