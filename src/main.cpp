@@ -33,31 +33,46 @@ int main(void)
 
 void brute_force(float* data, float* query, std::vector<int>& result, size_t dim, uint32_t k, size_t node_count)
 {
-    // TODO
-    // scan the data and compute a distance between each vector and query
-    // store K nearest neighbors in the result vector
     float diff = 0;
     int qI = 0;
-    //float* res = new float[100 * dim];
-    std::vector<DiffPos> listOfDiffPos;
-    size_t size = 0;
-    for (int i = 0; i < node_count; i++) {
-        diff += powf((data[i] - query[qI]), 2);
+    std::vector<DiffPos> diffs;
+    int size = 0;
+    bool sorted = false;
+    for (int i = 0; i < node_count * dim; i++) {
+        diff += (data[i] - query[qI]) * (data[i] - query[qI]);
         qI++;
-        if (i % dim == 0) {
-            listOfDiffPos.push_back(DiffPos(sqrtf(diff), size++));
+        if (qI == dim) {
+            diff = sqrtf(diff);
+            if (size < k) {
+                diffs.push_back(DiffPos(diff, size));
+            } else if (size == k) {
+                std::sort(diffs.begin(), diffs.end());
+                sorted = true;
+                if (diffs.back().diff > diff) {
+                    diffs.back() = DiffPos(diff, size);
+                    std::sort(diffs.begin(), diffs.end());
+                }
+            }
+            else {
+                if (diffs.back().diff > diff) {
+                    diffs.back() = DiffPos(diff, size);
+                    std::sort(diffs.begin(), diffs.end());
+                }
+            }
+            size++;
             qI = 0;
             diff = 0;
         }
     }
 
-    // Sort results 
-    std::sort(listOfDiffPos.begin(), listOfDiffPos.end());
+    if (!sorted) {
+        std::sort(diffs.begin(), diffs.end());
+    }
 
-    // Get result indexes from sorted result
+
     for (int i = 0; i < k; i++) {
-        cout << "Position[" << i << "] = " << listOfDiffPos[i].pos << "\n";
-        result.push_back(listOfDiffPos[i].pos);
+        cout << size << " " << i << " position: " << diffs[i].pos << " diff: " << diffs[i].diff << "\n";
+        result.push_back(diffs[i].pos);
     }
 }
 
@@ -65,13 +80,13 @@ void sift_test() {
     //vectors count
     size_t node_count = 1000000;
     //query count
-    size_t qsize = 1;
+    size_t qsize = 100;
     //vector dimension
     size_t vecdim = 128;
     //answers count for 1 query
-    size_t answer_size = 1;
+    size_t answer_size = 100;
     //numberr of nearest neigbors to find
-    uint32_t k = 1;
+    uint32_t k = 100;
     
    
     /////////////////////////////////////////////////////// READ DATA
@@ -110,7 +125,7 @@ void sift_test() {
         for (int i = 0; i < qsize; i++)
         {
             brute_force(mass, &massQ[i * vecdim], result, vecdim, k, node_count);
-            cout << "Act r " << massQA[0];
+            cout << "QA " << massQA[i] << " \n";
         }
         auto end = std::chrono::steady_clock::now();
         int time = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
